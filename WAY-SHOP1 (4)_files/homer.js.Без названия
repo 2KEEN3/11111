@@ -1,0 +1,347 @@
+/**
+ * HOMER - Responsive Admin Theme
+ * version 2.0
+ *
+ */
+
+$(document).ready(function () {
+
+    $("#recalRelations").on('click', function(e){
+        e.preventDefault();
+        var $this = $(this);
+        $.ajax({
+            'url' : '/seller/categories/refreshChilds',
+            'type' : 'post',
+            'data' : { 'action' : 'recalRelations' },
+            beforesend : function (){
+                $this.html("<i class='fas fa-spinner fa-pulse'></i>");
+            },
+            success : function(data){
+                location.reload();
+                $this.html("Пересчитать привязки <i class='fas fa-network-wired'></i>");
+            }
+        });
+        return false;
+    });
+
+
+    // Add special class to minimalize page elements when screen is less than 768px
+    setBodySmall();
+
+    // Check if sidebar scroll is enabled
+    if($('body').hasClass('sidebar-scroll')) {
+        $('#navigation').slimScroll({
+            height: '100%',
+            opacity: 0.3,
+            size : 0,
+            wheelStep : 5
+        });
+    };
+
+    // Handle minimalize sidebar menu
+    $('.hide-menu').on('click', function(event){
+        event.preventDefault();
+        if ($(window).width() < 769) {
+            $("body").toggleClass("show-sidebar");
+        } else {
+            $("body").toggleClass("hide-sidebar");
+        }
+    });
+
+    // Initialize metsiMenu plugin to sidebar menu
+    $('#side-menu').metisMenu();
+
+    // Initialize animate panel function
+    //$('.animate-panel').animatePanel();
+
+    $('.animate-panel').each(function(){
+        var interval = 100;
+        var child_effect = 'animated ' + $(this).attr('data-effect');
+        var child_block = '.' + $(this).attr('data-child');
+        $(this).find(child_block).each(function(){
+            var aBlock = $(this);
+            setTimeout( function(){ aBlock.addClass(child_effect); },  interval );
+            interval += 50;
+        });
+        interval += 150;
+    });
+
+    // Function for collapse hpanel
+    $('.showhide').on('click', function (event) {
+        event.preventDefault();
+        var hpanel = $(this).closest('div.hpanel');
+        var icon = $(this).find('i:first');
+        var body = hpanel.find('div.panel-body');
+        var footer = hpanel.find('div.panel-footer');
+        body.slideToggle(300);
+        footer.slideToggle(200);
+
+
+        // Toggle icon from up to down
+        icon.toggleClass('fa-chevron-up').toggleClass('fa-chevron-down');
+        hpanel.toggleClass('').toggleClass('panel-collapse');
+        setTimeout(function () {
+            hpanel.resize();
+            hpanel.find('[id^=map-]').resize();
+        }, 50);
+    });
+
+    // Function for close hpanel
+    $('.closebox').on('click', function (event) {
+        event.preventDefault();
+        var hpanel = $(this).closest('div.hpanel');
+        hpanel.remove();
+        if($('body').hasClass('fullscreen-panel-mode')) { $('body').removeClass('fullscreen-panel-mode');}
+    });
+
+    // Fullscreen for fullscreen hpanel
+    $('.fullscreen').on('click', function() {
+        var hpanel = $(this).closest('div.hpanel');
+        var icon = $(this).find('i:first');
+        $('body').toggleClass('fullscreen-panel-mode');
+        icon.toggleClass('fa-expand').toggleClass('fa-compress');
+        hpanel.toggleClass('fullscreen');
+        setTimeout(function() {
+            $(window).trigger('resize');
+        }, 100);
+    });
+
+    // Open close right sidebar
+    $('.right-sidebar-toggle').on('click', function () {
+        $('#right-sidebar').toggleClass('sidebar-open');
+    });
+
+    // Function for small header
+    $('.small-header-action').on('click', function(event){
+        event.preventDefault();
+        var icon = $(this).find('i:first');
+        var breadcrumb  = $(this).parent().find('#hbreadcrumb');
+        $(this).parent().parent().parent().toggleClass('small-header');
+        breadcrumb.toggleClass('m-t-lg');
+        icon.toggleClass('fa-arrow-up').toggleClass('fa-arrow-down');
+    });
+
+    // Set minimal height of #wrapper to fit the window
+    setTimeout(function () {
+        fixWrapperHeight();
+    });
+
+    // Initialize tooltips
+    $('.tooltip-demo').tooltip({
+        selector: "[data-toggle=tooltip]"
+    });
+
+    // Initialize popover
+    $("[data-toggle=popover]").popover();
+
+    // Move modal to body
+    // Fix Bootstrap backdrop issu with animation.css
+    $('.modal').appendTo("body")
+
+});
+
+$(window).bind("load", function () {
+    // Since Homer 2.0 splash screen is disable by default
+    // To enable splash screen please set in oyur style additional rule: .splash { display: block }
+    $('.splash').css('display', 'none')
+});
+
+$(window).bind("resize click", function () {
+
+    // Add special class to minimalize page elements when screen is less than 768px
+    setBodySmall();
+
+    // Waint until metsiMenu, collapse and other effect finish and set wrapper height
+    setTimeout(function () {
+        fixWrapperHeight();
+    }, 300);
+});
+
+function fixWrapperHeight() {
+
+    // Get and set current height
+    var headerH = 62;
+    var navigationH = $("#navigation").height();
+    var contentH = $(".content").height();
+
+    // Set new height when contnet height is less then navigation
+    if (contentH < navigationH) {
+        $("#wrapper").css("min-height", navigationH + 'px');
+    }
+
+    // Set new height when contnet height is less then navigation and navigation is less then window
+    if (contentH < navigationH && navigationH < $(window).height()) {
+        $("#wrapper").css("min-height", $(window).height() - headerH  + 'px');
+    }
+
+    // Set new height when contnet is higher then navigation but less then window
+    if (contentH > navigationH && contentH < $(window).height()) {
+        $("#wrapper").css("min-height", $(window).height() - headerH + 'px');
+    }
+}
+
+
+function setBodySmall() {
+    if ($(this).width() < 769) {
+        $('body').addClass('page-small');
+    } else {
+        $('body').removeClass('page-small');
+        $('body').removeClass('show-sidebar');
+    }
+}
+
+// Animate panel function
+$.fn['animatePanel'] = function() {
+
+    var element = $(this);
+    var effect = $(this).data('effect');
+    var delay = $(this).data('delay');
+    var child = $(this).data('child');
+
+    // Set default values for attrs
+    if(!effect) { effect = 'zoomIn'}
+    if(!delay) { delay = 0.05 } else { delay = delay / 10 }
+    if(!child) { child = '.row > div'} else {child = "." + child}
+
+    //Set defaul values for start animation and delay
+    var startAnimation = 0;
+    var start = Math.abs(delay) + startAnimation;
+
+    // Get all visible element and set opacity to 0
+    var panel = element.find(child);
+    panel.addClass('opacity-0');
+
+    // Get all elements and add effect class
+    panel = element.find(child);
+    panel.addClass('stagger').addClass('animated-panel').addClass(effect);
+
+    var panelsCount = panel.length + 10;
+    var animateTime = (panelsCount * delay * 10000) / 10;
+
+    // Add delay for each child elements
+    panel.each(function (i, elm) {
+        start += delay;
+        var rounded = Math.round(start * 10) / 10;
+        $(elm).css('animation-delay', rounded + 's');
+        // Remove opacity 0 after finish
+        $(elm).removeClass('opacity-0');
+    });
+
+    // Clear animation after finish
+    setTimeout(function(){
+        $('.stagger').css('animation', '');
+        $('.stagger').removeClass(effect).removeClass('animated-panel').removeClass('stagger');
+    }, animateTime);
+
+};
+// KVV
+/* ANIMATE NUMBER */
+(function(d){var r=function(b){return b.split("").reverse().join("")},m={numberStep:function(b,a){var e=Math.floor(b);d(a.elem).text(e)}},g=function(b){var a=b.elem;a.nodeType&&a.parentNode&&(a=a._animateNumberSetter,a||(a=m.numberStep),a(b.now,b))};d.Tween&&d.Tween.propHooks?d.Tween.propHooks.number={set:g}:d.fx.step.number=g;d.animateNumber={numberStepFactories:{append:function(b){return function(a,e){var f=Math.floor(a);d(e.elem).prop("number",a).text(f+b)}},separator:function(b,a,e){b=b||" ";
+            a=a||3;e=e||"";return function(f,k){var u=0>f,c=Math.floor((u?-1:1)*f).toString(),n=d(k.elem);if(c.length>a){for(var h=c,l=a,m=h.split("").reverse(),c=[],p,s,q,t=0,g=Math.ceil(h.length/l);t<g;t++){p="";for(q=0;q<l;q++){s=t*l+q;if(s===h.length)break;p+=m[s]}c.push(p)}h=c.length-1;l=r(c[h]);c[h]=r(parseInt(l,10).toString());c=c.join(b);c=r(c)}n.prop("number",f).text((u?"-":"")+c+e)}}}};d.fn.animateNumber=function(){for(var b=arguments[0],a=d.extend({},m,b),e=d(this),f=[a],k=1,g=arguments.length;k<g;k++)f.push(arguments[k]);
+    if(b.numberStep){var c=this.each(function(){this._animateNumberSetter=b.numberStep}),n=a.complete;a.complete=function(){c.each(function(){delete this._animateNumberSetter});n&&n.apply(this,arguments)}}return e.animate.apply(e,f)}})(jQuery);
+
+/* EQUALIZE */
+!function(i){i.fn.equalize=function(e){var n,t,h=!1,c=!1;return i.isPlainObject(e)?(n=e.equalize||"height",h=e.children||!1,c=e.reset||!1):n=e||"height",i.isFunction(i.fn[n])?(t=0<n.indexOf("eight")?"height":"width",this.each(function(){var e=h?i(this).find(h):i(this).children(),s=0;e.each(function(){var e=i(this);c&&e.css(t,""),e=e[n](),e>s&&(s=e)}),e.css(t,s+"px")})):!1}}(jQuery);
+
+/* xRESPONSE FUNCTION */
+/**
+ * @param  {string} url   [your url or file]
+ * @param  {object} your ajax param
+ * @param  {jQuery} action from [$(selector)]
+ * @param  {loader} bool [loader : show|no]
+ * @return {mix}       [ajax response]
+ */
+$.extend({
+    xResponse: function(url, data, obj, loader) {
+
+        var theResponse = null; // local var
+        var tmpLoader = '<i class="fa fa-spin fa-spinner tmpLoader" style="margin-left:10px;"></i>';
+
+        $.ajax({ // jQuery ajax
+            url: url,
+            type: 'POST',
+            data: data,
+            dataType: "JSON",
+            async: false,
+            beforeSend : function(){ if( obj && loader ){ obj.append(tmpLoader); } },
+            success: function(respText) {
+                theResponse = respText;
+                if( obj && loader ) { obj.find('.tmpLoader').remove(); }
+            }
+        });
+
+        return theResponse; // Return the response text
+    }
+});
+
+/*
+USAGE !! SMARTY IN TEMPLATES REQUIRE {} SO USE OR {literal}<script>...CODE...</script>{/literal} OR AFTER '{' MAKE ONE SPACE - { a : a } - CORRECT;  NOT LIKE THIS - {a:a} - WRONG !!!
+var xData = $.xResponse('temp.html', { issession: 1,selector: true } );
+console.log(xData); // see response in console
+*/
+
+/* CUSTOM TOOLTIP */
+this.tooltipCustom = function(selector){
+    /* CONFIG */
+    var top = 40;
+    var left = 20;
+    var element = $(selector);
+    var placement = element.attr('data-placement');
+    var tooltip = $('<div>').attr('id', 'tooltipCustom').addClass('tooltip').append('<div class="tooltip-arrow" style=""></div>').append('<div class="tooltip-inner"></div>');
+    /* END CONFIG */
+
+
+    element.hover(function(e){
+        console.log(element);
+        console.log(e);
+        this.t = this.title;
+        this.title = "";
+        var clientWidth = element[0].clientWidth;
+        var clientHeight = element[0].clientHeight;
+
+        var tooltip_content = (this.t != "") ? this.t : "";
+        tooltip.addClass(placement).find('.tooltip-inner').html(tooltip_content);
+        $("body").append(tooltip);
+        if( placement == 'top' ) { top = e.pageY - ( clientHeight + 60 ); left = (clientWidth / 2) - (e.pageX / 2); }
+        tooltip.css({ top : top + 'px', left : left + 'px' }).toggleClass('fade in');
+
+    }, function(){
+        this.title = this.t;
+        tooltip.toggleClass('fade in').remove();
+    });
+    element.mousemove(function(e){
+        //tooltip.css({ 'top' : (e.pageY - top) + 'px', 'left' : (e.pageX + left) + 'px' });
+    });
+};
+
+function addslashes(string) {
+    return string.replace(/\\/g, '\\\\').
+    replace(/\u0008/g, '\\b').
+    replace(/\t/g, '\\t').
+    replace(/\n/g, '\\n').
+    replace(/\f/g, '\\f').
+    replace(/\r/g, '\\r').
+    replace(/'/g, '\\\'').
+    replace(/"/g, '\\"');
+}
+
+// starting the script on page load
+$(document).ready(function(e){
+    tooltipCustom(".for_tooltip");
+});
+
+/* \ CUSTOM TOOLTIP */
+
+var tmpLoader = '<i class="fa fa-spin fa-spinner tmpLoader" style="margin-left:10px;"></i>';
+
+jQuery.browser = {};
+(function () {
+    jQuery.browser.msie = false;
+    jQuery.browser.version = 0;
+    if (navigator.userAgent.match(/MSIE ([0-9]+)\./)) {
+        jQuery.browser.msie = true;
+        jQuery.browser.version = RegExp.$1;
+    }
+})();
+
+// \ KVV
